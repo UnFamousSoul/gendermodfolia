@@ -1,0 +1,4 @@
+name: Female-Gender-Mod-Plugin
+version: '${project.version}'
+main: dbrighthd.wildfiregendermodplugin.GenderPlugin
+api-version: 1.20
