@@ -1,17 +1,19 @@
 
+
 package dbrighthd.wildfiregendermodplugin;
 
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
 import org.bukkit.Bukkit;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 
 public final class GenderPlugin extends JavaPlugin implements PluginMessageListener {
 
@@ -23,6 +25,8 @@ public final class GenderPlugin extends JavaPlugin implements PluginMessageListe
 
     @Override
     public void onEnable() {
+        ConsoleCommandSender console = getServer().getConsoleSender();
+        console.sendMessage("1.20.4 update with contributions by @stigstille");
         this.getServer().getMessenger().registerIncomingPluginChannel(this, genderInfo, this);
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, genderSync);
         this.getServer().getMessenger().registerIncomingPluginChannel(this, forgeChannel, this);
@@ -45,12 +49,12 @@ public final class GenderPlugin extends JavaPlugin implements PluginMessageListe
             if(channel.equals(forgeChannel))
             {
                 System.out.println("confirmed forge for " + player.getDisplayName());
-               buffer.readByte();
+                buffer.readByte();
             }
             UUID uuid = buffer.readUUID();
             GenderData.Gender gender = buffer.readEnum(GenderData.Gender.class);
             System.out.println("confirmed gender for  " + player.getDisplayName() + gender);
-           storePlayer(buffer, uuid, gender);
+            storePlayer(buffer, uuid, gender);
         }
         for(Map.Entry<UUID, GenderData.Gender> entry : playerGenderList.entrySet())
         {

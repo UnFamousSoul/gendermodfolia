@@ -31,60 +31,60 @@ import java.util.function.Function;
 
 public class GenderData {
 
-	public static final SoundEvent FEMALE_HURT = SoundEvent.createVariableRangeEvent(new ResourceLocation(GenderPlugin.MODID, "female_hurt"));
+    public static final SoundEvent FEMALE_HURT = SoundEvent.createVariableRangeEvent(new ResourceLocation(GenderPlugin.MODID, "female_hurt"));
 
-	protected static void register() {
-		Registry.register(BuiltInRegistries.SOUND_EVENT, FEMALE_HURT.getLocation(), FEMALE_HURT);
-	}
+    protected static void register() {
+        Registry.register(BuiltInRegistries.SOUND_EVENT, FEMALE_HURT.getLocation(), FEMALE_HURT);
+    }
 
-	public enum Gender implements Function<UUID, Gender> {
-		FEMALE(Component.translatable("wildfire_gender.label.female").withStyle(ChatFormatting.LIGHT_PURPLE), true, FEMALE_HURT),
-		MALE(Component.translatable("wildfire_gender.label.male").withStyle(ChatFormatting.BLUE), false, null),
-		OTHER(Component.translatable("wildfire_gender.label.other").withStyle(ChatFormatting.GREEN), true, FEMALE_HURT);
+    public enum Gender implements Function<UUID, Gender> {
+        FEMALE(Component.translatable("wildfire_gender.label.female").withStyle(ChatFormatting.LIGHT_PURPLE), true, FEMALE_HURT),
+        MALE(Component.translatable("wildfire_gender.label.male").withStyle(ChatFormatting.BLUE), false, null),
+        OTHER(Component.translatable("wildfire_gender.label.other").withStyle(ChatFormatting.GREEN), true, FEMALE_HURT);
 
-		private final Component name;
-		private final boolean canHaveBreasts;
-		private final @Nullable SoundEvent hurtSound;
-		public boolean needsSync;
-		public  UUID uuid;
-		private Gender gender;
-		public float bust_size;
-		public boolean hurtSounds;
+        private final Component name;
+        private final boolean canHaveBreasts;
+        private final @Nullable SoundEvent hurtSound;
+        public boolean needsSync;
+        public  UUID uuid;
+        private Gender gender;
+        public float bust_size;
+        public boolean hurtSounds;
 
-		//physics variablesz
-		public boolean breast_physics;
-		public boolean show_in_armor;
-		public float bounceMultiplier;
-		public float floppyMultiplier;
+        //physics variablesz
+        public boolean breast_physics;
+        public boolean show_in_armor;
+        public float bounceMultiplier;
+        public float floppyMultiplier;
 
-		public float xOffset;
-		public float yOffset;
-		public float zOffset;
-		public boolean uniboob;
-		public float cleavage;
+        public float xOffset;
+        public float yOffset;
+        public float zOffset;
+        public boolean uniboob;
+        public float cleavage;
 
-		Gender(Component name, boolean canHaveBreasts, @Nullable SoundEvent hurtSound) {
-			this.name = name;
-			this.canHaveBreasts = canHaveBreasts;
-			this.hurtSound = hurtSound;
-		}
+        Gender(Component name, boolean canHaveBreasts, @Nullable SoundEvent hurtSound) {
+            this.name = name;
+            this.canHaveBreasts = canHaveBreasts;
+            this.hurtSound = hurtSound;
+        }
 
-		public Component getDisplayName() {
-			return name;
-		}
+        public Component getDisplayName() {
+            return name;
+        }
 
-		public @Nullable SoundEvent getHurtSound() {
-			return hurtSound;
-		}
+        public @Nullable SoundEvent getHurtSound() {
+            return hurtSound;
+        }
 
-		public boolean canHaveBreasts() {
-			return canHaveBreasts;
-		}
+        public boolean canHaveBreasts() {
+            return canHaveBreasts;
+        }
 
-		@Override
-		public Gender apply(UUID uuid) {
-			return null;
-		}
-	}
+        @Override
+        public Gender apply(UUID uuid) {
+            return null;
+        }
+    }
 
 }
