@@ -1,37 +1,39 @@
-
-
 package dbrighthd.wildfiregendermodplugin;
 
+import dbrighthd.wildfiregendermodplugin.gender.GenderData;
+import dbrighthd.wildfiregendermodplugin.utilities.Constants;
+import dbrighthd.wildfiregendermodplugin.utilities.MCProtoBuf;
 import io.netty.buffer.Unpooled;
-import net.minecraft.network.FriendlyByteBuf;
 import org.bukkit.Bukkit;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-
-public final class GenderPlugin extends JavaPlugin implements PluginMessageListener {
-
-    public static final String MODID = "wildfire_gender";
-    String genderInfo = MODID + ":send_gender_info";
-    String genderSync = MODID + ":sync";
-    String forgeChannel = MODID + ":main_channel";
-    Map<UUID, GenderData.Gender> playerGenderList = new HashMap<>();
+public class GenderPlugin extends JavaPlugin implements PluginMessageListener, Listener {
+    private final Map<UUID, GenderData> genderDataMap = new HashMap<>();
 
     @Override
     public void onEnable() {
-        ConsoleCommandSender console = getServer().getConsoleSender();
-        console.sendMessage("1.20.5 update with contributions by @stigstille");
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, genderInfo, this);
-        this.getServer().getMessenger().registerOutgoingPluginChannel(this, genderSync);
-        this.getServer().getMessenger().registerIncomingPluginChannel(this, forgeChannel, this);
-        this.getServer().getMessenger().registerOutgoingPluginChannel(this, forgeChannel);
+        getLogger().info("1.20.6 update with contributions by @stigstille and @winnpixie");
 
+        // Handle syncing for new joins, and removing unused data from non-present players.
+        this.getServer().getPluginManager().registerEvents(this, this);
+
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, Constants.SEND_GENDER_INFO, this);
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, Constants.SYNC);
+
+        // Forge
+        this.getServer().getMessenger().registerIncomingPluginChannel(this, Constants.FORGE, this);
+        this.getServer().getMessenger().registerOutgoingPluginChannel(this, Constants.FORGE);
     }
 
     @Override
@@ -41,69 +43,70 @@ public final class GenderPlugin extends JavaPlugin implements PluginMessageListe
     }
 
     @Override
-    public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        System.out.println("i got a message from " + player.getName());
-        if (channel.equals(genderInfo) || channel.equals(forgeChannel)) {
-            System.out.println("channel verified for " + player.getName());
-            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.copiedBuffer(message));
-            if(channel.equals(forgeChannel))
-            {
-                System.out.println("confirmed forge for " + player.getName());
-                buffer.readByte();
-            }
-            UUID uuid = buffer.readUUID();
-            GenderData.Gender gender = buffer.readEnum(GenderData.Gender.class);
-            System.out.println("confirmed gender for  " + player.getName() + gender);
-            storePlayer(buffer, uuid, gender);
-        }
-        for(Map.Entry<UUID, GenderData.Gender> entry : playerGenderList.entrySet())
-        {
-            FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
-            FriendlyByteBuf bufferForge = new FriendlyByteBuf(Unpooled.buffer());
-            bufferForge.writeByte(1);
-            encode(buffer,entry.getValue());
-            encode(bufferForge,entry.getValue());
-            System.out.println("confirmed gender for  " + entry.getValue());
-            for(Player playerToReceive : Bukkit.getOnlinePlayers())
-            {
-                playerToReceive.sendPluginMessage(this, genderSync,buffer.array());
-                playerToReceive.sendPluginMessage(this, forgeChannel,bufferForge.array());
+    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, byte[] message) {
+        String playerName = player.getName();
+        getLogger().info("Received message from %s".formatted(playerName));
+
+        // Save player's gender data to memory.
+        if (channel.equals(Constants.SEND_GENDER_INFO) || channel.equals(Constants.FORGE)) {
+            getLogger().info("Channel verified for %s".formatted(playerName));
+
+            MCProtoBuf buffer = new MCProtoBuf(Unpooled.copiedBuffer(message));
+            if (channel.equals(Constants.FORGE)) {
+                getLogger().info("%s is using Forge".formatted(playerName));
+                buffer.realBuffer().readByte();
             }
 
+            GenderData data = GenderData.decode(buffer);
+            data.shouldSync = true;
+            genderDataMap.put(data.uuid, data);
+
+            getLogger().info("Stored gender data for %s(%s) (%s)".formatted(data.uuid, playerName, data.gender.name()));
+        }
+
+        // Sync NEW/MODIFIED gender data to ALL online players.
+        for (GenderData data : genderDataMap.values()) {
+            if (!data.shouldSync) continue;
+
+            data.shouldSync = false;
+            MCProtoBuf buffer = new MCProtoBuf(Unpooled.buffer());
+            MCProtoBuf forgeBuffer = new MCProtoBuf(Unpooled.buffer());
+            forgeBuffer.realBuffer().writeByte(1);
+
+            data.encode(buffer);
+            data.encode(forgeBuffer);
+
+            getLogger().info("Sending gender data from %s(%s) to ALL".formatted(data.uuid, data.gender.name()));
+            for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                onlinePlayer.sendPluginMessage(this, Constants.SYNC, buffer.realBuffer().array());
+                onlinePlayer.sendPluginMessage(this, Constants.FORGE, forgeBuffer.realBuffer().array());
+            }
         }
     }
-    public void encode(FriendlyByteBuf buffer, GenderData.Gender gender)
-    {
-        buffer.writeUUID(gender.uuid);
-        buffer.writeEnum(gender);
-        buffer.writeFloat(gender.bust_size);
-        buffer.writeBoolean(gender.hurtSounds);
-        buffer.writeBoolean(gender.breast_physics);
-        buffer.writeBoolean(gender.show_in_armor);
-        buffer.writeFloat(gender.bounceMultiplier);
-        buffer.writeFloat(gender.floppyMultiplier);
 
-        buffer.writeFloat(gender.xOffset);
-        buffer.writeFloat(gender.yOffset);
-        buffer.writeFloat(gender.zOffset);
-        buffer.writeBoolean(gender.uniboob);
-        buffer.writeFloat(gender.cleavage);
+    @EventHandler
+    private void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+
+        // Send ALL existing gender data to a player who has joined. !! IGNORES SYNC STATUS !!
+        for (GenderData data : genderDataMap.values()) {
+            MCProtoBuf buffer = new MCProtoBuf(Unpooled.buffer());
+            MCProtoBuf forgeBuffer = new MCProtoBuf(Unpooled.buffer());
+            forgeBuffer.realBuffer().writeByte(1);
+
+            data.encode(buffer);
+            data.encode(forgeBuffer);
+
+            getLogger().info("Sending gender data from %s(%s) to %s".formatted(data.uuid, data.gender.name(), player.getName()));
+            player.sendPluginMessage(this, Constants.SYNC, buffer.realBuffer().array());
+            player.sendPluginMessage(this, Constants.FORGE, forgeBuffer.realBuffer().array());
+        }
     }
-    public void storePlayer(FriendlyByteBuf buffer, UUID uuid, GenderData.Gender gender)
-    {
-        gender.bust_size = buffer.readFloat();
-        gender.hurtSounds = buffer.readBoolean();
-        gender.uuid = uuid;
-        gender.breast_physics = buffer.readBoolean();
-        gender.show_in_armor = buffer.readBoolean();
-        gender.bounceMultiplier = buffer.readFloat();
-        gender.floppyMultiplier = buffer.readFloat();
 
-        gender.xOffset = buffer.readFloat();
-        gender.yOffset = buffer.readFloat();
-        gender.zOffset = buffer.readFloat();
-        gender.uniboob = buffer.readBoolean();
-        gender.cleavage = buffer.readFloat();
-        playerGenderList.put(uuid,gender);
+    @EventHandler
+    private void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        genderDataMap.remove(player.getUniqueId());  // Remove gender data for a player who is no longer online.
+        getLogger().info("Removed gender data for %s(%s)".formatted(player.getUniqueId(), player.getName()));
     }
 }
