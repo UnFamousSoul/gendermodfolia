@@ -26,5 +26,5 @@ public class Constants {
     public static final String SYNC = MOD_ID + ":sync";
     public static final String FORGE = MOD_ID + ":main_channel";
 
-    public static final NamespacedKey FEMALE_HURT = new NamespacedKey(MOD_ID, "female_hurt");
+    public static final NamespacedKey FEMALE_HURT = NamespacedKey.fromString(MOD_ID + ":female_hurt");
 }

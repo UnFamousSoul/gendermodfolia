@@ -1,9 +1,9 @@
 package dbrighthd.wildfiregendermodplugin;
 
 import dbrighthd.wildfiregendermodplugin.gender.GenderData;
+import dbrighthd.wildfiregendermodplugin.protocol.minecraft.CraftInputStream;
+import dbrighthd.wildfiregendermodplugin.protocol.minecraft.CraftOutputStream;
 import dbrighthd.wildfiregendermodplugin.utilities.Constants;
-import dbrighthd.wildfiregendermodplugin.utilities.MCDecoder;
-import dbrighthd.wildfiregendermodplugin.utilities.MCEncoder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,6 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +30,7 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
         // Handle syncing for new joins, and removing unused data from offline players.
         this.getServer().getPluginManager().registerEvents(this, this);
 
+        // Fabric
         this.getServer().getMessenger().registerIncomingPluginChannel(this, Constants.SEND_GENDER_INFO, this);
         this.getServer().getMessenger().registerOutgoingPluginChannel(this, Constants.SYNC);
 
@@ -52,31 +54,33 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
         if (channel.equals(Constants.SEND_GENDER_INFO) || channel.equals(Constants.FORGE)) {
             getLogger().info("Channel verified for %s".formatted(playerName));
 
-            MCDecoder decoder = new MCDecoder(message);
+            try (CraftInputStream craftInput = new CraftInputStream(message)) {
+                if (channel.equals(Constants.FORGE)) {
+                    getLogger().info("%s is using FORGE".formatted(playerName));
 
-            // Forge version contains an extra byte
-            if (channel.equals(Constants.FORGE)) {
-                getLogger().info("%s is using FORGE".formatted(playerName));
+                    try {
+                        // Forge version contains an extra byte
+                        craftInput.readByte();
+                    } catch (IOException ex) {
+                        getLogger().severe("Could not read FORGE header from %s".formatted(playerName));
+                        ex.printStackTrace();
+
+                        // Early return to prevent potentially malformed data storage.
+                        return;
+                    }
+                }
 
                 try {
-                    decoder.getReader().readByte();
+                    GenderData data = GenderData.decode(craftInput);
+                    data.needsSync = true;
+                    genderDataStorage.put(data.uuid, data);
+
+                    getLogger().info("Stored GenderData for %s(%s) (%s)".formatted(data.uuid, playerName, data.gender.name()));
                 } catch (IOException ex) {
-                    getLogger().severe("Could not read FORGE header from %s".formatted(playerName));
+                    getLogger().severe("Error storing GenderData for %s".formatted(playerName));
                     ex.printStackTrace();
-
-                    // Early return to prevent potentially malformed data storage.
-                    return;
                 }
-            }
-
-            try {
-                GenderData data = GenderData.decode(decoder);
-                data.needsSync = true;
-                genderDataStorage.put(data.uuid, data);
-
-                getLogger().info("Stored GenderData for %s(%s) (%s)".formatted(data.uuid, playerName, data.gender.name()));
             } catch (IOException ex) {
-                getLogger().severe("Error storing GenderData for %s".formatted(playerName));
                 ex.printStackTrace();
             }
         }
@@ -87,33 +91,34 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
 
             getLogger().info("Sending GenderData from %s(%s) to ALL".formatted(data.uuid, data.gender.name()));
 
-            MCEncoder encoder = new MCEncoder();
-            MCEncoder forgeEncoder = new MCEncoder();
-
+            ByteArrayOutputStream fabricPayload = new ByteArrayOutputStream();
+            CraftOutputStream fabricStream = new CraftOutputStream(fabricPayload);
             try {
-                data.encode(encoder);
+                data.encode(fabricStream);
             } catch (IOException ex) {
                 getLogger().severe("Error encoding data");
                 ex.printStackTrace();
 
                 // Nullify encoder so it won't be used.
-                encoder = null;
+                fabricStream = null;
             }
 
+            ByteArrayOutputStream forgePayload = new ByteArrayOutputStream();
+            CraftOutputStream forgeStream = new CraftOutputStream(forgePayload);
             try {
-                forgeEncoder.getWriter().writeByte(1);
-                data.encode(forgeEncoder);
+                forgeStream.writeByte(1);
+                data.encode(forgeStream);
             } catch (IOException ex) {
                 getLogger().severe("Error encoding data[FORGE]");
                 ex.printStackTrace();
 
                 // Nullify encoder so it won't be used.
-                forgeEncoder = null;
+                forgeStream = null;
             }
 
             for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                if (encoder != null) sendDataToPlayer(onlinePlayer, Constants.SYNC, encoder);
-                if (forgeEncoder != null) sendDataToPlayer(onlinePlayer, Constants.FORGE, forgeEncoder);
+                if (fabricStream != null) sendDataToPlayer(onlinePlayer, Constants.SYNC, fabricPayload.toByteArray());
+                if (forgeStream != null) sendDataToPlayer(onlinePlayer, Constants.FORGE, forgePayload.toByteArray());
             }
 
             // FIXME: Investigate why this causes de-sync for new players.
@@ -130,20 +135,20 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
         genderDataStorage.forEach((uuid, data) -> {
             getLogger().info("Sending gender data from %s(%s) to %s".formatted(data.uuid, data.gender.name(), playerName));
 
-            MCEncoder encoder = new MCEncoder();
-            try {
-                data.encode(encoder);
-                sendDataToPlayer(player, Constants.SYNC, encoder);
+            try (ByteArrayOutputStream fabricPayload = new ByteArrayOutputStream();
+                 CraftOutputStream fabricStream = new CraftOutputStream(fabricPayload)) {
+                data.encode(fabricStream);
+                sendDataToPlayer(player, Constants.SYNC, fabricPayload.toByteArray());
             } catch (IOException ex) {
                 getLogger().severe("Error sending data to %s".formatted(playerName));
                 ex.printStackTrace();
             }
 
-            MCEncoder forgeEncoder = new MCEncoder();
-            try {
-                forgeEncoder.getWriter().writeByte(1);
-                data.encode(forgeEncoder);
-                sendDataToPlayer(player, Constants.FORGE, forgeEncoder);
+            try (ByteArrayOutputStream forgePayload = new ByteArrayOutputStream();
+                 CraftOutputStream forgeStream = new CraftOutputStream(forgePayload)) {
+                forgeStream.writeByte(1);
+                data.encode(forgeStream);
+                sendDataToPlayer(player, Constants.FORGE, forgePayload.toByteArray());
             } catch (IOException ex) {
                 getLogger().severe("Error sending data[FORGE] to %s".formatted(playerName));
                 ex.printStackTrace();
@@ -151,8 +156,8 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
         });
     }
 
-    private void sendDataToPlayer(Player player, String channel, MCEncoder encoder) {
-        player.sendPluginMessage(this, channel, encoder.getData());
+    private void sendDataToPlayer(Player player, String channel, byte[] data) {
+        player.sendPluginMessage(this, channel, data);
     }
 
     @EventHandler

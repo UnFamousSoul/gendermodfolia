@@ -18,8 +18,8 @@
 
 package dbrighthd.wildfiregendermodplugin.gender;
 
-import dbrighthd.wildfiregendermodplugin.utilities.MCDecoder;
-import dbrighthd.wildfiregendermodplugin.utilities.MCEncoder;
+import dbrighthd.wildfiregendermodplugin.protocol.minecraft.CraftInputStream;
+import dbrighthd.wildfiregendermodplugin.protocol.minecraft.CraftOutputStream;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -47,48 +47,44 @@ public class GenderData {
     public boolean uniboob;
     public float cleavage;
 
-    public void encode(MCEncoder encoder) throws IOException {
-        encoder.writeUUID(this.uuid);
-        encoder.writeEnum(this.gender);
+    public void encode(CraftOutputStream outputStream) throws IOException {
+        outputStream.writeUUID(this.uuid);
+        outputStream.writeEnum(this.gender);
 
-        encoder.getWriter().writeFloat(this.bustSize);
-        encoder.getWriter().writeBoolean(this.hurtSounds);
-        encoder.getWriter().writeFloat(this.voicePitch);
-        encoder.getWriter().writeBoolean(this.breastPhysics);
-        encoder.getWriter().writeBoolean(this.showInArmor);
-        encoder.getWriter().writeFloat(this.bounceMultiplier);
-        encoder.getWriter().writeFloat(this.floppyMultiplier);
+        outputStream.writeFloat(this.bustSize);
+        outputStream.writeBoolean(this.hurtSounds);
+        outputStream.writeFloat(this.voicePitch);
+        outputStream.writeBoolean(this.breastPhysics);
+        outputStream.writeBoolean(this.showInArmor);
+        outputStream.writeFloat(this.bounceMultiplier);
+        outputStream.writeFloat(this.floppyMultiplier);
 
-        encoder.getWriter().writeFloat(this.xOffset);
-        encoder.getWriter().writeFloat(this.yOffset);
-        encoder.getWriter().writeFloat(this.zOffset);
-        encoder.getWriter().writeBoolean(this.uniboob);
-        encoder.getWriter().writeFloat(this.cleavage);
-
-        encoder.finish();
+        outputStream.writeFloat(this.xOffset);
+        outputStream.writeFloat(this.yOffset);
+        outputStream.writeFloat(this.zOffset);
+        outputStream.writeBoolean(this.uniboob);
+        outputStream.writeFloat(this.cleavage);
     }
 
-    public static GenderData decode(MCDecoder decoder) throws IOException {
+    public static GenderData decode(CraftInputStream inputStream) throws IOException {
         GenderData data = new GenderData();
 
-        data.uuid = decoder.readUUID();
-        data.gender = decoder.readEnum(Gender.class);
+        data.uuid = inputStream.readUUID();
+        data.gender = inputStream.readEnum(Gender.class);
 
-        data.bustSize = decoder.getReader().readFloat();
-        data.hurtSounds = decoder.getReader().readBoolean();
-        data.voicePitch = decoder.getReader().readFloat();
-        data.breastPhysics = decoder.getReader().readBoolean();
-        data.showInArmor = decoder.getReader().readBoolean();
-        data.bounceMultiplier = decoder.getReader().readFloat();
-        data.floppyMultiplier = decoder.getReader().readFloat();
+        data.bustSize = inputStream.readFloat();
+        data.hurtSounds = inputStream.readBoolean();
+        data.voicePitch = inputStream.readFloat();
+        data.breastPhysics = inputStream.readBoolean();
+        data.showInArmor = inputStream.readBoolean();
+        data.bounceMultiplier = inputStream.readFloat();
+        data.floppyMultiplier = inputStream.readFloat();
 
-        data.xOffset = decoder.getReader().readFloat();
-        data.yOffset = decoder.getReader().readFloat();
-        data.zOffset = decoder.getReader().readFloat();
-        data.uniboob = decoder.getReader().readBoolean();
-        data.cleavage = decoder.getReader().readFloat();
-
-        decoder.finish();
+        data.xOffset = inputStream.readFloat();
+        data.yOffset = inputStream.readFloat();
+        data.zOffset = inputStream.readFloat();
+        data.uniboob = inputStream.readBoolean();
+        data.cleavage = inputStream.readFloat();
 
         return data;
     }
