@@ -35,11 +35,11 @@ public class GenderPlugin extends JavaPlugin implements PluginMessageListener, L
 
         saveDefaultConfig();
 
-        int protocolVersion = getConfig().getInt("mod.protocol", 4); // "4" is latest as of 20/Jul/2025
+        int protocolVersion = getConfig().getInt("mod.protocol", -1); // "4" is latest as of 20/Jul/2025
         syncPacket = switch (protocolVersion) {
             case 2 -> new GenderSyncPacketV2();
             case 3 -> new GenderSyncPacketV3();
-            case 4 -> new GenderSyncPacketV4();
+            case 4, -1 -> new GenderSyncPacketV4(); // Latest
             default -> null;
         };
 
