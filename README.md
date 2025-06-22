@@ -1,4 +1,4 @@
-# Female Gender Mod Plugin
+# Plugin for Wildfire's Female Gender Mod
 
 This is a Spigot plugin that allows clients using [Wildfire's Female Gender Mod](https://modrinth.com/mod/female-gender)
 to have synced configs when playing on a Spigot server. This plugin was made by me as a member of the community and is
