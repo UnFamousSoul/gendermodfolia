@@ -61,7 +61,7 @@ public class NetworkManager {
     }
 
     public ModUser deserializeUser(byte[] data, boolean forge) {
-        try (CraftInputStream input = new CraftInputStream(data)) {
+        try (CraftInputStream input = CraftInputStream.ofBytes(data)) {
             if (forge) input.readByte();
 
             return packetFormat.read(input);

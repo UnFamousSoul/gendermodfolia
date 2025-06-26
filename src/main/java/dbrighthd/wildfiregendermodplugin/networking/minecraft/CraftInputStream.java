@@ -14,8 +14,8 @@ import java.util.UUID;
  * @author winnpixie
  */
 public class CraftInputStream extends DataInputStream {
-    public CraftInputStream(byte[] data) {
-        this(new ByteArrayInputStream(data));
+    public static CraftInputStream ofBytes(byte[] bytes) {
+        return new CraftInputStream(new ByteArrayInputStream(bytes));
     }
 
     public CraftInputStream(InputStream in) {
