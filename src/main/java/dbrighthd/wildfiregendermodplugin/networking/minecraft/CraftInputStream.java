@@ -14,6 +14,12 @@ import java.util.UUID;
  * @author winnpixie
  */
 public class CraftInputStream extends DataInputStream {
+    /**
+     * Create an instance of this stream that reads from an underlying {@link ByteArrayInputStream} from a provided byte-array
+     *
+     * @param bytes the code byte-array to read from.
+     * @return An instance of this stream whose parent is a {@link ByteArrayInputStream}.
+     */
     public static CraftInputStream ofBytes(byte[] bytes) {
         return new CraftInputStream(new ByteArrayInputStream(bytes));
     }

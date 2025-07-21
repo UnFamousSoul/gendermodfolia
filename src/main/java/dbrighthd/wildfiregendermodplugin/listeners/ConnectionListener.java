@@ -10,7 +10,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.Collections;
 import java.util.UUID;
-import java.util.logging.Level;
 
 /**
  * Handles player join and quit events.
@@ -28,7 +27,7 @@ public class ConnectionListener implements Listener {
     private void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        plugin.getLogger().log(Level.INFO, () -> "Syncing %s".formatted(player.getName()));
+        plugin.getCustomLogger().info("Syncing %s", player.getName());
 
         // Send ALL stored mod configurations to the newly joined player.
         plugin.getNetworkManager().sync(Collections.singletonList(player));
@@ -39,7 +38,7 @@ public class ConnectionListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        plugin.getLogger().log(Level.INFO, () -> "Removing %s".formatted(player.getName()));
+        plugin.getCustomLogger().debug("Removing %s", player.getName());
 
         // Remove configuration for a player who is no longer online.
         plugin.getUserManager().getUsers().remove(uuid);

@@ -7,8 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.logging.Level;
-
 /**
  * Handles payload packets from mod users.
  *
@@ -29,16 +27,16 @@ public class ModPayloadListener implements PluginMessageListener {
         if (user == null) return;
 
         if (!player.getUniqueId().equals(user.userId())) {
-            plugin.getLogger().log(Level.SEVERE, () -> "Unauthorized set of user by %s for %s"
-                    .formatted(player.getName(), user.userId()));
+            plugin.getCustomLogger().warning("Unauthorized access attempt by %s for %s",
+                    player.getName(), user.userId());
 
             // Early return, unauthorized attempt to set another player's data.
             return;
         }
 
         plugin.getUserManager().getUsers().put(user.userId(), user);
-        plugin.getLogger().log(Level.INFO, () -> "Stored %s (as %s)"
-                .formatted(player.getName(), user.configuration().generalOptions().genderIdentity().name()));
+        plugin.getCustomLogger().debug("Stored %s as %s",
+                player.getName(), user.configuration().generalOptions().genderIdentity().name());
 
         // Sync mod configurations for ALL online players.
         plugin.getNetworkManager().sync(plugin.getServer().getOnlinePlayers());

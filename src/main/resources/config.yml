@@ -8,3 +8,10 @@ mod:
   # -1 will use the newest known protocol, so that you won't need to change this every mod and plugin update.
   # Undocumented protocols will cause this plugin to disable itself on launch.
   protocol: -1
+
+# Logging of events and debug messages
+logging:
+  # Whether logging should be printed out to the server console.
+  enabled: true
+  # Toggle the inclusion of "debug" messages with logging.
+  debug: false
