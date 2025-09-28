@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: dev.folia:folia-api:1.21.8-R0.1-SNAPSHOT" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="dev.folia" artifactId="folia-api" version="1.21.8-R0.1-SNAPSHOT" baseVersion="1.21.8-R0.1-SNAPSHOT" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/dev.folia/folia-api/1.21.8-R0.1-SNAPSHOT/6dd2aff592dcee91845f112471d5af8738ec2ab/folia-api-1.21.8-R0.1-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/dev.folia/folia-api/1.21.8-R0.1-SNAPSHOT/982781f4ae5a1bf7e9ef63320f4c59b2b6ddcc96/folia-api-1.21.8-R0.1-SNAPSHOT-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
